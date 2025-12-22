@@ -1,127 +1,122 @@
-import { useState } from "react"
-import { API_BASE_URL } from "../utils/const"
-import { useAuth } from "./useAuth"
+import { useState } from "react";
+import { API_BASE_URL } from "../utils/const";
+import { fetchWithAuth } from "../utils/apiClient";
+import { useAuth } from "./useAuth";
+import { Message } from "./useMessage";
 
 export interface ChatSession {
-  id: string
-  title: string
-  createdAt: string
-  updatedAt: string
-  messageCount: number
-}
-
-interface GetSessionsResponse {
-  success: boolean
-  sessions?: ChatSession[]
-  total?: number
-  error?: string
-}
-
-interface CreateSessionResponse {
-  success: boolean
-  session?: ChatSession
-  error?: string
+  id: number;
+  title: string;
+  is_archived: boolean;
+  created_at: string;
+  updated_at: string;
+  messages: Message[];
+  last_message: string;
 }
 
 interface DeleteSessionResponse {
-  success: boolean
-  message?: string
-  error?: string
+  success: boolean;
+  message?: string;
+  error?: string;
 }
 
 export function useChatSession() {
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const { getAccessToken } = useAuth();
-  const accessToken = getAccessToken();
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { refreshAccessToken } = useAuth();
+
   // Lấy danh sách phiên chat
   const getSessions = async (): Promise<ChatSession[]> => {
-    setIsLoading(true)
-    setError(null)
+    setIsLoading(true);
+    setError(null);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/chat/conversations/`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${accessToken || ""}`,
-        },
-      })
+      const response = await fetchWithAuth(
+        `${API_BASE_URL}/api/chat/conversations/`,
+        { method: "GET" },
+        refreshAccessToken
+      );
 
-      const data: GetSessionsResponse = await response.json()
-      console.log(data, 'data in api');
-      
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error(data.error || "Không thể lấy danh sách phiên chat")
+        throw new Error(data.error || "Không thể lấy danh sách phiên chat");
       }
 
-      return data || []
+      return data || [];
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Đã xảy ra lỗi"
-      setError(errorMessage)
-      return []
+      const errorMessage = err instanceof Error ? err.message : "Đã xảy ra lỗi";
+      setError(errorMessage);
+      return [];
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   // Tạo phiên chat mới
-  const createSession = async (): Promise<ChatSession | null> => {
-    setIsLoading(true)
-    setError(null)
+  const createSession = async ({
+    title,
+    is_archived,
+  }: {
+    title: string;
+    is_archived: boolean;
+  }): Promise<ChatSession | null> => {
+    setIsLoading(true);
+    setError(null);
 
     try {
-      const response = await fetch("/api/chat-sessions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+      const response = await fetchWithAuth(
+        `${API_BASE_URL}/api/chat/conversations/`,
+        {
+          method: "POST",
+          body: JSON.stringify({ title, is_archived }),
         },
-      })
+        refreshAccessToken
+      );
 
-      const data: CreateSessionResponse = await response.json()
+      const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Không thể tạo phiên chat mới")
+        throw new Error(data.error || "Không thể tạo phiên chat mới");
       }
 
-      return data.session || null
+      return data || null;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Đã xảy ra lỗi"
-      setError(errorMessage)
-      return null
+      const errorMessage = err instanceof Error ? err.message : "Đã xảy ra lỗi";
+      setError(errorMessage);
+      return null;
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   // Xóa phiên chat
-  const deleteSession = async (sessionId: string): Promise<boolean> => {
-    setIsLoading(true)
-    setError(null)
+  const deleteSession = async (sessionId: number): Promise<boolean> => {
+    setIsLoading(true);
+    setError(null);
 
     try {
-      const response = await fetch(`/api/chat-sessions?sessionId=${sessionId}`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      })
+      const response = await fetchWithAuth(
+        `${API_BASE_URL}/api/chat/conversations/${sessionId}`,
+        { method: "DELETE" },
+        refreshAccessToken
+      );
 
-      const data: DeleteSessionResponse = await response.json()
+      const data: DeleteSessionResponse = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Không thể xóa phiên chat")
+        throw new Error(data.error || "Không thể xóa phiên chat");
       }
 
-      return true
+      return true;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Đã xảy ra lỗi"
-      setError(errorMessage)
-      return false
+      const errorMessage = err instanceof Error ? err.message : "Đã xảy ra lỗi";
+      setError(errorMessage);
+      return false;
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return {
     getSessions,
@@ -129,5 +124,5 @@ export function useChatSession() {
     deleteSession,
     isLoading,
     error,
-  }
+  };
 }

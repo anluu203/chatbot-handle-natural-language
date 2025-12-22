@@ -1,5 +1,5 @@
 
-import { ChatbotInterface } from "./components/chatbot"
+import { redirect } from "next/navigation";
 export default function Home() {
-  return <ChatbotInterface />
+  redirect('/login');
 }

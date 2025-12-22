@@ -1,114 +1,96 @@
-import { useState } from "react"
+import { useState } from "react";
+import { API_BASE_URL } from "../utils/const";
+import { fetchWithAuth } from "../utils/apiClient";
+import { useAuth } from "./useAuth";
+import { ChatSession } from "./useChatSession";
 
-interface Message {
-  id: string
-  text: string
-  sender: "user" | "bot"
-  timestamp: Date
+export interface Message {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  meta: string;
+  created_at: string;
 }
 
 interface SendMessageResponse {
-  success: boolean
-  userMessage?: Message
-  botMessage?: Message
-  error?: string
-}
-
-interface GetMessagesResponse {
-  success: boolean
-  messages?: Array<{
-    id: string
-    text: string
-    sender: "user" | "bot"
-    timestamp: string
-  }>
-  total?: number
-  error?: string
+  success: boolean;
+  userMessage?: Message;
+  botMessage?: Message;
+  error?: string;
 }
 
 export function useMessage() {
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { refreshAccessToken } = useAuth();
+  
   // Gửi tin nhắn
-  const sendMessage = async (text: string, sessionId?: string): Promise<SendMessageResponse | null> => {
-    setIsLoading(true)
-    setError(null)
+  const sendMessage = async (
+    message: string,
+    conversation_id: number,
+    k: number
+  ): Promise<SendMessageResponse | null> => {
+    setIsLoading(true);
+    setError(null);
 
     try {
-      const response = await fetch("/api/messages", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+      const response = await fetchWithAuth(
+        `${API_BASE_URL}/api/chat/chat/`,
+        {
+          method: "POST",
+          body: JSON.stringify({ message, conversation_id, k }),
         },
-        body: JSON.stringify({ text, sessionId }),
-      })
+        refreshAccessToken
+      );
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Không thể gửi tin nhắn")
+        throw new Error(data.error || "Không thể gửi tin nhắn");
       }
 
-      // Chuyển đổi timestamp từ string sang Date
-      if (data.userMessage) {
-        data.userMessage.timestamp = new Date(data.userMessage.timestamp)
-      }
-      if (data.botMessage) {
-        data.botMessage.timestamp = new Date(data.botMessage.timestamp)
-      }
-
-      return data
+      return data;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Đã xảy ra lỗi"
-      setError(errorMessage)
-      return null
+      const errorMessage = err instanceof Error ? err.message : "Đã xảy ra lỗi";
+      setError(errorMessage);
+      return null;
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   // Lấy lịch sử chat
-  const getMessages = async (sessionId?: string): Promise<Message[]> => {
-    setIsLoading(true)
-    setError(null)
+  const getMessages = async (sessionId: number): Promise<ChatSession> => {
+    setIsLoading(true);
+    setError(null);
 
     try {
-      const url = sessionId ? `/api/messages?sessionId=${sessionId}` : "/api/messages"
-      const response = await fetch(url, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      })
+      const url = `${API_BASE_URL}/api/chat/conversations/${sessionId}/`;
+      const response = await fetchWithAuth(
+        url,
+        { method: "GET" },
+        refreshAccessToken
+      );
 
-      const data: GetMessagesResponse = await response.json()
+      const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Không thể lấy lịch sử chat")
+        throw new Error(data.error || "Không thể lấy lịch sử chat");
       }
-
-      // Chuyển đổi timestamp từ string sang Date
-      const messages: Message[] =
-        data.messages?.map((msg) => ({
-          ...msg,
-          timestamp: new Date(msg.timestamp),
-        })) || []
-
-      return messages
+      return data;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Đã xảy ra lỗi"
-      setError(errorMessage)
-      return []
+      const errorMessage = err instanceof Error ? err.message : "Đã xảy ra lỗi";
+      setError(errorMessage);
+      return Promise.reject(errorMessage);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return {
     sendMessage,
     getMessages,
     isLoading,
     error,
-  }
+  };
 }

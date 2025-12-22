@@ -15,7 +15,7 @@ export default function LoginPage() {
   // Redirect nếu đã đăng nhập
   useEffect(() => {
     if (isAuthenticated && !isLoading) {
-      router.push("/")
+      router.push("/chat-bot")
     }
   }, [isAuthenticated, isLoading, router])
 
@@ -28,7 +28,7 @@ export default function LoginPage() {
 
     const success = await login(username, password)
     if (success) {
-      router.push("/")
+      router.push("/chat-bot")
     }
   }
 
