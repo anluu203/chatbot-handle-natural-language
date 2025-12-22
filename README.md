@@ -1,36 +1,147 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Chat Bot Application
 
-## Getting Started
+Ứng dụng Chat Bot được xây dựng với [Next.js](https://nextjs.org) và React. 
 
-First, run the development server:
+## Yêu cầu hệ thống
 
+- Node.js 18+ hoặc Docker
+- npm hoặc yarn
+
+## Hướng dẫn chạy ứng dụng
+
+### 1. Chạy với npm (Nếu đã cài Nodejs trên máy)
+
+#### Cài đặt dependencies:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+#### Chạy ứng dụng ở chế độ development:
+```bash
+npm run dev
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Ứng dụng sẽ chạy tại [http://localhost:3000](http://localhost:3000)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+#### Build ứng dụng:
+```bash
+npm run build
+```
 
-## Learn More
+#### Chạy ứng dụng ở chế độ production:
+```bash
+npm run build
+npm start
+```
 
-To learn more about Next.js, take a look at the following resources:
+### 2. Chạy với Docker
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+#### Build Docker image:
+```bash
+docker build -t chat-bot:latest .
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+#### Chạy container:
+```bash
+docker run -p 3000:3000 chat-bot:latest
+```
 
-## Deploy on Vercel
+#### Chạy container với tên custom:
+```bash
+docker run -p 3000:3000 --name my-chat-bot chat-bot:latest
+```
+Ứng dụng sẽ chạy tại [http://localhost:3000](http://localhost:3000)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+#### Dừng container:
+```bash
+docker stop my-chat-bot
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+#### Xoá container:
+```bash
+docker rm my-chat-bot
+```
+
+### 3. Chạy với Docker Compose (tuỳ chọn)
+
+Tạo file `docker-compose.yml` nếu cần:
+
+```yaml
+version: '3.8'
+
+services:
+  chat-bot:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+    restart: unless-stopped
+```
+
+Sau đó chạy:
+```bash
+docker-compose up
+```
+
+## Cấu trúc dự án
+
+```
+.
+├── app/
+│   ├── api/              # API routes
+│   ├── apis/             # API client hooks
+│   ├── chat-bot/         # Chat bot page
+│   ├── components/       # React components
+│   ├── login/            # Login page
+│   ├── utils/            # Utility functions
+│   └── page.tsx          # Home page
+├── public/               # Static files
+├── Dockerfile            # Docker configuration
+├── docker-compose.yml    # Docker Compose configuration
+├── next.config.ts        # Next.js configuration
+├── tsconfig.json         # TypeScript configuration
+├── tailwind.config.ts    # Tailwind CSS configuration
+└── package.json          # Project dependencies
+```
+
+## NPM Scripts
+
+- `npm run dev` - Chạy development server
+- `npm run build` - Build ứng dụng cho production
+- `npm start` - Chạy ứng dụng ở chế độ production
+- `npm run lint` - Chạy ESLint để kiểm tra code
+
+## Công nghệ sử dụng
+
+- **Framework**: Next.js 16.0.1
+- **Language**: TypeScript
+- **UI**: React 19.2.0
+- **Styling**: Tailwind CSS 4
+- **UI Components**: Radix UI
+- **Forms**: React Hook Form
+- **Icons**: Lucide React
+
+## Mở rộng
+
+Để chỉnh sửa ứng dụng:
+
+1. Tệp page chính: `app/page.tsx`
+2. Components: `app/components/`
+3. API routes: `app/api/`
+4. Styles: `app/globals.css` (Tailwind CSS)
+
+
+## Tìm hiểu thêm
+
+- [Next.js Documentation](https://nextjs.org/docs)
+- [React Documentation](https://react.dev)
+- [Tailwind CSS](https://tailwindcss.com)
+- [TypeScript](https://www.typescriptlang.org)
+
+## Liên hệ & Hỗ trợ
+
+Nếu có vấn đề gì, vui lòng kiểm tra:
+1. Đã cài đặt dependencies: `npm install`
+2. Port 3000 có bị chiếm không
+3. Phiên bản Node.js: `node --version` (phải >= 18)

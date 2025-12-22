@@ -13,7 +13,7 @@ import { useAuth } from "../apis/useAuth";
 const MemoizedChatSidebar = memo(ChatSidebar);
 
 export function ChatbotInterface() {
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<any[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const [initialized, setInitialized] = useState(false);
@@ -40,7 +40,6 @@ export function ChatbotInterface() {
     setMessages(history.messages || []);
   }, []);
 
-  /** Initialize: load sessions + messages */
   useEffect(() => {
     if (!initialized) {
       const load = async () => {
@@ -66,7 +65,7 @@ export function ChatbotInterface() {
         ...prev,
         { role: "user", content: response?.question },
         { role: "assistant", content: response?.answer },
-      ]);
+      ] );
     }
 
     const sessionList = await getSessions();

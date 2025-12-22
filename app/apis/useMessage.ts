@@ -13,17 +13,16 @@ export interface Message {
 }
 
 interface SendMessageResponse {
-  success: boolean;
-  userMessage?: Message;
-  botMessage?: Message;
-  error?: string;
+  question: string;
+  answer: string;
+  sources: any;
 }
 
 export function useMessage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { refreshAccessToken } = useAuth();
-  
+
   // Gửi tin nhắn
   const sendMessage = async (
     message: string,
