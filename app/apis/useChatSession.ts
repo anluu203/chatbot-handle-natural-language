@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { API_BASE_URL } from "../utils/const";
-import { fetchWithAuth } from "../utils/apiClient";
+import { apiClient } from "../utils/apiClient";
 import { useAuth } from "./useAuth";
 import { Message } from "./useMessage";
 
@@ -31,7 +31,7 @@ export function useChatSession() {
     setError(null);
 
     try {
-      const response = await fetchWithAuth(
+      const response = await apiClient(
         `${API_BASE_URL}/api/chat/conversations/`,
         { method: "GET" },
         refreshAccessToken
@@ -65,7 +65,7 @@ export function useChatSession() {
     setError(null);
 
     try {
-      const response = await fetchWithAuth(
+      const response = await apiClient(
         `${API_BASE_URL}/api/chat/conversations/`,
         {
           method: "POST",
@@ -96,7 +96,7 @@ export function useChatSession() {
     setError(null);
 
     try {
-      const response = await fetchWithAuth(
+      const response = await apiClient(
         `${API_BASE_URL}/api/chat/conversations/${sessionId}`,
         { method: "DELETE" },
         refreshAccessToken

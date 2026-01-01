@@ -56,9 +56,7 @@ export function ChatbotInterface() {
   /** Send message */
   const handleSendMessage = useCallback(async (messageText: string) => {
     if (!messageText.trim() || isLoading) return;
-
     const response = await sendMessage(messageText, currentSessionId, 1);
-    console.log(response);
 
     if (response) {
       setMessages((prev) => [
@@ -72,7 +70,6 @@ export function ChatbotInterface() {
     getMessages(currentSessionId);
     setSessions(sessionList);
   }, [isLoading, currentSessionId, sendMessage, getSessions, getMessages]);
-  console.log(messages, "list mes");
 
   /** Create Session */
   const handleCreateSession = async (title_input: string) => {
@@ -92,8 +89,7 @@ export function ChatbotInterface() {
 
   /** Delete Session */
   const handleDeleteSession = async (sessionId: number) => {
-    const success = await deleteSession(sessionId);
-    console.log(success, "delete success");
+     await deleteSession(sessionId);
 
     // Refresh danh sách sessions từ server
     const sessionList = await getSessions();

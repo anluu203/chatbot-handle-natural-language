@@ -3,7 +3,7 @@
 import { getTokens, removeTokens } from "./tokens"
 
 // Fetch với auto-refresh token
-export async function fetchWithAuth(
+export async function apiClient(
   url: string, 
   options: RequestInit = {}, 
   refreshAccessToken: () => Promise<boolean>
