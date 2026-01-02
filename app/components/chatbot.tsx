@@ -1,6 +1,5 @@
 "use client";
 
-import type React from "react";
 import { useState, useRef, useEffect, useCallback, memo } from "react";
 import { Bot, Menu, LogOut } from "lucide-react";
 
@@ -13,7 +12,7 @@ import { useAuth } from "../apis/useAuth";
 const MemoizedChatSidebar = memo(ChatSidebar);
 
 export function ChatbotInterface() {
-  const [messages, setMessages] = useState<any[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const [initialized, setInitialized] = useState(false);
@@ -21,7 +20,8 @@ export function ChatbotInterface() {
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const { sendMessage, getMessages, isLoading, error } = useMessage();
+  const { sendMessage, getMessages, isLoadingSend, isLoadingGet, error } =
+    useMessage();
   const { getSessions, createSession, deleteSession } = useChatSession();
   const { logout } = useAuth();
 
@@ -31,14 +31,17 @@ export function ChatbotInterface() {
   };
   useEffect(() => {
     scrollToBottom();
-  }, [messages, isLoading]);
+  }, [messages, isLoadingGet]);
 
   /** Load messages for a session */
-  const loadSessionMessages = useCallback(async (sessionId: number) => {
-    setCurrentSessionId(sessionId);
-    const history = await getMessages(sessionId);
-    setMessages(history.messages || []);
-  }, []);
+  const loadSessionMessages = useCallback(
+    async (sessionId: number) => {
+      setCurrentSessionId(sessionId);
+      const history = await getMessages(sessionId);
+      setMessages(history.messages || []);
+    },
+    [getMessages]
+  );
 
   useEffect(() => {
     if (!initialized) {
@@ -53,23 +56,65 @@ export function ChatbotInterface() {
     }
   }, [initialized, currentSessionId]);
 
-  /** Send message */
-  const handleSendMessage = useCallback(async (messageText: string) => {
-    if (!messageText.trim() || isLoading) return;
-    const response = await sendMessage(messageText, currentSessionId, 1);
+  const handleSendMessage = useCallback(
+    async (messageText: string) => {
+      if (!messageText.trim() || isLoadingSend) return;
 
-    if (response) {
-      setMessages((prev) => [
-        ...prev,
-        { role: "user", content: response?.question },
-        { role: "assistant", content: response?.answer },
-      ] );
-    }
+      // Tạo tin nhắn user hiển thị ngay và placeholder assistant đang load
+      const userMsgId = `u-${Date.now()}`;
+      const assistantPlaceholderId = `a-${Date.now()}`;
+      const userMsg: Message = {
+        id: userMsgId,
+        role: "user",
+        content: messageText,
+      };
+      const assistantPlaceholder = {
+        id: assistantPlaceholderId,
+        role: "assistant",
+        content: "",
+        loading: true,
+      };
 
-    const sessionList = await getSessions();
-    getMessages(currentSessionId);
-    setSessions(sessionList);
-  }, [isLoading, currentSessionId, sendMessage, getSessions, getMessages]);
+      // Hiển thị ngay
+      setMessages((prev) => [...prev, userMsg, assistantPlaceholder]);
+
+      // Gọi API
+      const response = await sendMessage(messageText, currentSessionId, 1);
+
+      if (response) {
+        // Thay placeholder bằng câu trả lời thực
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === assistantPlaceholderId
+              ? { ...m, content: response.answer, loading: false }
+              : m
+          )
+        );
+      } else {
+        // Nếu lỗi, cập nhật placeholder hiển thị lỗi
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === assistantPlaceholderId
+              ? { ...m, content: "Đã có lỗi khi gửi tin nhắn", loading: false }
+              : m
+          )
+        );
+      }
+
+      // Cập nhật danh sách session
+      const sessionList = await getSessions();
+      getMessages(currentSessionId, { silent: true });
+      setSessions(sessionList);
+    },
+    [
+      isLoadingSend,
+      isLoadingGet,
+      currentSessionId,
+      sendMessage,
+      getSessions,
+      getMessages,
+    ]
+  );
 
   /** Create Session */
   const handleCreateSession = async (title_input: string) => {
@@ -89,7 +134,7 @@ export function ChatbotInterface() {
 
   /** Delete Session */
   const handleDeleteSession = async (sessionId: number) => {
-     await deleteSession(sessionId);
+    await deleteSession(sessionId);
 
     // Refresh danh sách sessions từ server
     const sessionList = await getSessions();
@@ -120,7 +165,7 @@ export function ChatbotInterface() {
       />
 
       {/* MAIN CHAT AREA */}
-      <div className="flex flex-1 flex-col">
+      <div className="flex flex-1 flex-col relative">
         {/* Header */}
         <header className="border-b border-chatbot-border bg-white px-6 py-4 shadow-sm">
           <div className="flex items-center justify-between">
@@ -162,7 +207,7 @@ export function ChatbotInterface() {
 
         {/* Messages */}
         <main className="flex-1 overflow-y-auto px-4 py-6 sm:px-6">
-          <div className="mx-auto max-w-3xl space-y-4">
+          <div className="mx-auto max-w-3xl space-y-4 ">
             {messages.map((msg) => (
               <div
                 key={msg.id}
@@ -174,6 +219,8 @@ export function ChatbotInterface() {
                   className={`max-w-xs rounded-3xl px-5 py-3 sm:max-w-md lg:max-w-lg ${
                     msg.role === "user"
                       ? "bg-chatbot-primary text-white shadow-md"
+                      : msg.role === "assistant" && msg.content === ""
+                      ? "hidden"
                       : "bg-chatbot-bot-bg text-foreground shadow-sm"
                   }`}
                 >
@@ -182,7 +229,7 @@ export function ChatbotInterface() {
               </div>
             ))}
 
-            {isLoading && (
+            {isLoadingSend && (
               <div className="flex justify-start">
                 <div className="rounded-3xl bg-chatbot-bot-bg px-5 py-3 shadow-sm">
                   <div className="flex gap-1">
@@ -192,6 +239,11 @@ export function ChatbotInterface() {
                   </div>
                 </div>
               </div>
+            )}
+            {isLoadingGet && (
+            <div className=" absolute top-1/2 left-1/2 transform">
+              <div className="h-10 w-10 animate-spin rounded-full border-6 border-violet-600 border-t-transparent"></div>
+            </div>
             )}
 
             {error && (
@@ -207,7 +259,7 @@ export function ChatbotInterface() {
         </main>
 
         {/* Input */}
-        <ChatInput onSubmit={handleSendMessage} isLoading={isLoading} />
+        <ChatInput onSubmit={handleSendMessage} isLoading={isLoadingSend} />
       </div>
     </div>
   );

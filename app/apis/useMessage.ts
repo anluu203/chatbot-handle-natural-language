@@ -8,8 +8,8 @@ export interface Message {
   id: string;
   role: "user" | "assistant";
   content: string;
-  meta: string;
-  created_at: string;
+  meta?: string;
+  created_at?: string;
 }
 
 interface SendMessageResponse {
@@ -19,7 +19,8 @@ interface SendMessageResponse {
 }
 
 export function useMessage() {
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingSend, setIsLoadingSend] = useState(false);
+  const [isLoadingGet, setIsLoadingGet] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { refreshAccessToken } = useAuth();
 
@@ -29,7 +30,7 @@ export function useMessage() {
     conversation_id: number,
     k: number
   ): Promise<SendMessageResponse | null> => {
-    setIsLoading(true);
+    setIsLoadingSend(true);
     setError(null);
 
     try {
@@ -54,14 +55,20 @@ export function useMessage() {
       setError(errorMessage);
       return null;
     } finally {
-      setIsLoading(false);
+      setIsLoadingSend(false);
     }
   };
 
   // Lấy lịch sử chat
-  const getMessages = async (sessionId: number): Promise<ChatSession> => {
-    setIsLoading(true);
-    setError(null);
+  const getMessages = async (
+    sessionId: number,
+    options?: { silent?: boolean }
+  ): Promise<ChatSession> => {
+    const silent = options?.silent ?? false;
+    if (!silent) {
+      setIsLoadingGet(true);
+      setError(null);
+    }
 
     try {
       const url = `${API_BASE_URL}/api/chat/conversations/${sessionId}/`;
@@ -79,17 +86,18 @@ export function useMessage() {
       return data;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Đã xảy ra lỗi";
-      setError(errorMessage);
+      if (!silent) setError(errorMessage);
       return Promise.reject(errorMessage);
     } finally {
-      setIsLoading(false);
+      if (!silent) setIsLoadingGet(false);
     }
   };
 
   return {
     sendMessage,
     getMessages,
-    isLoading,
+    isLoadingSend,
+    isLoadingGet,
     error,
   };
 }
