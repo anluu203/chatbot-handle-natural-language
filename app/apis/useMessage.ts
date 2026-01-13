@@ -10,6 +10,7 @@ export interface Message {
   content: string;
   meta?: string;
   created_at?: string;
+  loading?: boolean;
 }
 
 interface SendMessageResponse {

@@ -68,7 +68,7 @@ export function ChatbotInterface() {
         role: "user",
         content: messageText,
       };
-      const assistantPlaceholder = {
+      const assistantPlaceholder: Message = {
         id: assistantPlaceholderId,
         role: "assistant",
         content: "",
